@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+
+# Helper functions
+function _logger_info() {
+    echo -e "\n[$(date '+%d/%b %H:%M')]: $*...\n"
+}
+
+function _sleep() {
+    sleep 0.5
+}
+
+
+function _game_instruction() {
+    echo "
+    How to play this game?
+
+    First select where to insert tic or tac.
+
+    Table (reference) index:
+    [0] [1] [2]
+    [3] [4] [5]
+    [6] [7] [8]
+"
+}
+
+function _help() {
+    _logger_info "Usage: ${0} [-h]"
+
+    _game_instruction
+}
+
+function _update_move() {
+    _logger_info "Updating table"
+
+    index="${1}"
+    value="${2}"
+
+    # TODO: In case if index is already filled, reject update
+
+    table[${index}]=`echo ${value} | tr "[:lower:]" "[:upper:]"`
+
+    # TODO: Reset table if full
+    # TODO: Check if "this" was a winning move
+}
+
+function _save_game() {
+    _logger_info "Saving the game"
+
+    save_file="${1}"
+
+    # wipe previous data
+    cat /dev/null > ${save_file}
+
+    for i in {0..8}; do
+        echo "${i}=${table[i]}" >> ${save_file}
+    done
+}
+
+function _check_wrong_option() {
+    retries="$1"
+
+    _logger_info "You have picked the wrong option"
+
+    _sleep
+
+    # the program does not save progress here
+    if [[ "${retries}" -eq 0 ]]; then
+        _logger_info "Gamer ${USER} you have been timeout"
+        _sleep
+        _logger_info "Program is exiting"
+
+        exit 2
+
+    elif [[ "${retries}" -eq 1 ]]; then
+        _logger_info "Use (H)elp, for instructions"
+    fi
+
+    _logger_info "You have ${retries} mistake(s) available"
+
+    _sleep
+}
