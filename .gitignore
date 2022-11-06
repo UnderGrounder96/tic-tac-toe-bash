@@ -1,0 +1,5 @@
+# save file
+.saved_game
+
+# logs dir
+logs/
