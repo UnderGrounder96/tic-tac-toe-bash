@@ -25,6 +25,15 @@ function welcome() {
     _logger_info "Feel free to (S)ave or (Q)uit at anytime"
 }
 
+function good_bye() {
+    if [[ "${block_save}" -eq 0 ]]; then
+        _save_game "${save_file}"
+    fi
+
+    _logger_info "Quiting. Good bye"
+}
+
+
 function show_table() {
 
     _logger_info "Showing the current table status"
@@ -75,9 +84,11 @@ function run_program() {
 
                 [Ss] | [Cc])
                     if [[ "${block_save}" -eq 1 ]]; then
-                        _logger_info "Table has not changed in size. Skipping..."
+                        _logger_info "Table size has not changed. Skipping"
 
-                        _check_wrong_option $retries
+                        _sleep
+
+                        _check_wrong_option "${retries}"
 
                         retries=$((retries - 1))
 
@@ -86,7 +97,7 @@ function run_program() {
                     elif [[ "${block_save}" -eq 2 ]]; then
                         _logger_info "Game was already saved"
 
-                        _check_wrong_option $retries
+                        _check_wrong_option "${retries}"
 
                         retries=$((retries - 1))
 
@@ -95,24 +106,20 @@ function run_program() {
 
                     _sleep
 
-                    _save_game ${save_file}
+                    _save_game "${save_file}"
 
                     block_save=2
                     ;;
 
                 [Qq])
-                    if [[ "${block_save}" -eq 0 ]]; then
-                        _save_game ${save_file}
-                    fi
-
-                    _logger_info "Quiting. Good bye"
+                    good_bye
 
                     # notice how we leave the func with return instead of exit
                     return 0
                     ;;
 
                 *)
-                    _check_wrong_option $retries
+                    _check_wrong_option "${retries}"
 
                     retries=$((retries - 1))
                     ;;
@@ -150,11 +157,11 @@ function run_program() {
 
                 [Ss] | [Cc])
                     if [[ "${block_save}" -eq 1 ]]; then
-                        _logger_info "Table has not changed in size. Skipping"
+                        _logger_info "Table size has not changed. Skipping"
 
                         _sleep
 
-                        _check_wrong_option $retries
+                        _check_wrong_option "${retries}"
 
                         retries=$((retries - 1))
 
@@ -163,31 +170,27 @@ function run_program() {
                     elif [[ "${block_save}" -eq 2 ]]; then
                         _logger_info "Game was already saved"
 
-                        _check_wrong_option $retries
+                        _check_wrong_option "${retries}"
 
                         retries=$((retries - 1))
 
                         continue
                     fi
 
-                    _save_game ${save_file}
+                    _save_game "${save_file}"
 
                     block_save=0
                     ;;
 
                 [Qq])
-                    if [[ "${block_save}" -eq 0 ]]; then
-                        _save_game ${save_file}
-                    fi
-
-                    _logger_info "Quiting. Good bye"
+                    good_bye
 
                     # notice how we leave the func with return instead of exit
                     return 0
                     ;;
 
                 *)
-                    _check_wrong_option $retries
+                    _check_wrong_option "${retries}"
 
                     retries=$((retries - 1))
                     ;;
@@ -220,7 +223,7 @@ function start_game() {
         done
     fi
 
-    run_program ${save_file}
+    run_program "${save_file}"
 }
 
 
