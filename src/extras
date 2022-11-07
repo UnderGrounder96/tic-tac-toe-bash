@@ -23,10 +23,53 @@ function _game_instruction() {
 "
 }
 
+function _show_table() {
+
+    _logger_info "Showing the current table status"
+
+    _sleep
+
+    echo "
+    [${table[0]}] [${table[1]}] [${table[2]}]
+    [${table[3]}] [${table[4]}] [${table[5]}]
+    [${table[6]}] [${table[7]}] [${table[8]}]
+"
+}
+
 function _help() {
     _logger_info "Usage: ${0} [-h]"
 
     _game_instruction
+}
+
+function _reset_table() {
+    _sleep
+
+    _logger_info "Resetting table"
+
+    for i in {0..8}; do
+        unset table[${i}]
+    done
+}
+
+function _check_win_move() {
+    value="${3}"
+
+    if [[ "${table[$1]}" == "${value}" && "${table[$2]}" == "${value}" ]]; then
+        _sleep
+        _show_table
+
+        _logger_info "Game has ended! Congratulations to ${GAMER}"
+
+        _reset_table
+    elif [[ "${#table[@]}" -eq 8 ]]; then
+        _sleep
+        _show_table
+        
+        _logger_info "Nobody has won"
+
+        _reset_table
+    fi
 }
 
 function _update_move() {
@@ -35,15 +78,105 @@ function _update_move() {
     index="${1}"
     value="${2}"
 
-    # TODO: In case if index is already filled, reject update
+    if [[ -n "${table[${index}]}" ]]; then
+        _logger_info "This table index was previously filled. Skipping"
 
-    table[${index}]=`echo ${value} | tr "[:lower:]" "[:upper:]"`
+        return 1
+    fi
 
-    # TODO: Reset table if full
+    value=`echo ${value} | tr "[:lower:]" "[:upper:]"`
+    table[${index}]="${value}"
+
+
+    table_tracker=$((table_tracker+1))
+
     # TODO: Check if "this" was a winning move
+    case "${index}" in
+        0)
+            _check_win_move "1" "2" "${value}"
+
+            _check_win_move "4" "8" "${value}"
+
+            _check_win_move "3" "6" "${value}"
+            ;;
+
+        1)
+            _check_win_move "0" "2" "${value}"
+
+            _check_win_move "4" "7" "${value}"
+            ;;
+
+        2)
+            _check_win_move "0" "1" "${value}"
+
+            _check_win_move "4" "6" "${value}"
+
+            _check_win_move "5" "8" "${value}"
+            ;;
+
+        3)
+            _check_win_move "0" "6" "${value}"
+
+            _check_win_move "4" "5" "${value}"
+            ;;
+
+        4)
+            _check_win_move "0" "8" "${value}"
+
+            _check_win_move "1" "7" "${value}"
+
+            _check_win_move "2" "6" "${value}"
+
+            _check_win_move "3" "5" "${value}"
+            ;;
+
+        5)
+            _check_win_move "2" "8" "${value}"
+
+            _check_win_move "3" "4" "${value}"
+            ;;
+
+        6)
+            _check_win_move "0" "3" "${value}"
+
+            _check_win_move "2" "4" "${value}"
+
+            _check_win_move "7" "8" "${value}"
+            ;;
+
+        7)
+            _check_win_move "1" "4" "${value}"
+
+            _check_win_move "6" "8" "${value}"
+            ;;
+
+        8)
+            _check_win_move "0" "4" "${value}"
+
+            _check_win_move "2" "5" "${value}"
+
+            _check_win_move "6" "7" "${value}"
+            ;;
+    esac
+
+
+    if [[ "${#table[@]}" -eq 9 ]]; then
+        _logger_info "Nobody has won"
+
+        _reset_table
+    fi
+
+    return 0
 }
 
 function _save_game() {
+
+    if [[ "${#table[@]}" -eq 0 ]]; then
+        _logger_info "Table is empty. Can't save"
+
+        return 1
+    fi
+
     _logger_info "Saving the game"
 
     save_file="${1}"
@@ -58,6 +191,8 @@ function _save_game() {
 
 function _check_wrong_option() {
     retries="$1"
+
+    _sleep
 
     _logger_info "You have picked the wrong option"
 

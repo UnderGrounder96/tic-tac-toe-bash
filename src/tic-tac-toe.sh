@@ -5,6 +5,7 @@ Author: UnderGrounder96
 Creation on: 20-Nov-2022
 "
 
+GAMER="${USER}"
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 . ${ROOT_DIR}/extras
@@ -18,7 +19,7 @@ declare -a table
 
 function welcome() {
 
-    _logger_info "Hello there, gamer ${USER}!"
+    _logger_info "Hello there, gamer ${GAMER}!"
 
     _sleep
 
@@ -33,21 +34,9 @@ function good_bye() {
     _logger_info "Quiting. Good bye"
 }
 
-
-function show_table() {
-
-    _logger_info "Showing the current table status"
-
-    _sleep
-
-    echo "
-    [${table[0]}] [${table[1]}] [${table[2]}]
-    [${table[3]}] [${table[4]}] [${table[5]}]
-    [${table[6]}] [${table[7]}] [${table[8]}]
-"
-}
-
 function run_program() {
+    # TODO: Alternate between values for table X->O->X or O->X->O
+    # TODO: Improve save flow
 
     save_file="${1}"
 
@@ -63,7 +52,7 @@ function run_program() {
         # show current table status
 
         _sleep
-        show_table
+        _show_table
 
         # receive the table index
         while true; do
@@ -84,18 +73,7 @@ function run_program() {
 
                 [Ss] | [Cc])
                     if [[ "${block_save}" -eq 1 ]]; then
-                        _logger_info "Table size has not changed. Skipping"
-
-                        _sleep
-
-                        _check_wrong_option "${retries}"
-
-                        retries=$((retries - 1))
-
-                        continue
-
-                    elif [[ "${block_save}" -eq 2 ]]; then
-                        _logger_info "Game was already saved"
+                        _logger_info "Game is already saved, maybe"
 
                         _check_wrong_option "${retries}"
 
@@ -108,7 +86,7 @@ function run_program() {
 
                     _save_game "${save_file}"
 
-                    block_save=2
+                    block_save=1
                     ;;
 
                 [Qq])
@@ -137,16 +115,11 @@ function run_program() {
 
             _sleep
 
-            _logger_info "Gamer has provided the option: ${ans}"
+            _logger_info "${GAMER} has provided the option: ${ans}"
 
             case "${ans}" in
                 [Xx] | [Oo])
                     value="${ans}"
-
-                    if [[ "${block_save}" -eq 1 ]]; then
-                        # lift save blocker
-                        block_save=0
-                    fi
 
                     break
                     ;;
@@ -157,18 +130,7 @@ function run_program() {
 
                 [Ss] | [Cc])
                     if [[ "${block_save}" -eq 1 ]]; then
-                        _logger_info "Table size has not changed. Skipping"
-
-                        _sleep
-
-                        _check_wrong_option "${retries}"
-
-                        retries=$((retries - 1))
-
-                        continue
-
-                    elif [[ "${block_save}" -eq 2 ]]; then
-                        _logger_info "Game was already saved"
+                        _logger_info "Game is already saved, maybe"
 
                         _check_wrong_option "${retries}"
 
@@ -177,9 +139,11 @@ function run_program() {
                         continue
                     fi
 
+                    _sleep
+
                     _save_game "${save_file}"
 
-                    block_save=0
+                    block_save=1
                     ;;
 
                 [Qq])
@@ -199,6 +163,17 @@ function run_program() {
 
 
         _update_move "${index}" "${value}"
+
+        if [[ "$?" -eq 1 ]]; then
+            _check_wrong_option "${retries}"
+
+            retries=$((retries - 1))
+        fi
+
+        if [[ "${block_save}" -eq 1 ]]; then
+            # lift save blocker
+            block_save=0
+        fi
     done
 }
 
