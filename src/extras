@@ -11,11 +11,9 @@ function _sleep() {
 
 
 function _game_instruction() {
+    _logger_info "${GAMER} will use - '${value}'"
+
     echo "
-    How to play this game?
-
-    First select where to insert tic or tac.
-
     Table (reference) index:
     [0] [1] [2]
     [3] [4] [5]
@@ -45,6 +43,10 @@ function _help() {
 function _reset_table() {
     _sleep
 
+    if [[ "${#table[@]}" -eq 0 ]]; then
+        return 1
+    fi
+
     _logger_info "Resetting table"
 
     for i in {0..8}; do
@@ -61,14 +63,17 @@ function _check_win_move() {
 
         _logger_info "Game has ended! Congratulations to ${GAMER}"
 
-        _reset_table
-    elif [[ "${#table[@]}" -eq 8 ]]; then
         _sleep
-        _show_table
-        
-        _logger_info "Nobody has won"
+        _sleep
 
         _reset_table
+    # elif [[ "${#table[@]}" -eq 8 ]]; then
+    #     _sleep
+    #     _show_table
+
+    #     _logger_info "Nobody has won"
+
+    #     _reset_table
     fi
 }
 
@@ -84,13 +89,13 @@ function _update_move() {
         return 1
     fi
 
-    value=`echo ${value} | tr "[:lower:]" "[:upper:]"`
+    # value=`echo ${value} | tr "[:lower:]" "[:upper:]"`
     table[${index}]="${value}"
 
 
     table_tracker=$((table_tracker+1))
 
-    # TODO: Check if "this" was a winning move
+    # Check if "this" was a winning move
     case "${index}" in
         0)
             _check_win_move "1" "2" "${value}"
@@ -183,6 +188,8 @@ function _save_game() {
 
     # wipe previous data
     cat /dev/null > ${save_file}
+
+    echo "value=${value}" >> ${save_file}
 
     for i in {0..8}; do
         echo "${i}=${table[i]}" >> ${save_file}
