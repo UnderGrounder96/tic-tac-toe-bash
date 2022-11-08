@@ -3,10 +3,14 @@
 : "
 Author: UnderGrounder96
 Creation on: 20-Nov-2022
+
+The game is hard by design.
+Allowing only 3 mistakes from the player.
+And if you save, AI may have +1 turn.
 "
 
 value=
-GAMER="${USER}"
+GAMER=
 ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 . ${ROOT_DIR}/extras
@@ -20,13 +24,14 @@ declare -a table
 
 if [[ $((${RANDOM} % 2 )) -eq 0 ]]; then
     value="O"
+    GAMER="${USER}"
 else
     value="X"
+    GAMER="AI"
 fi
 
 
 function welcome() {
-
     _logger_info "Hello there, gamer ${GAMER}!"
 
     _sleep
@@ -61,70 +66,81 @@ function run_program() {
     while true; do
         # show current table status
 
+        _logger_info "Current turn: ${GAMER}'s with will use - '${value}'"
+
         _sleep
         _show_table
 
-        # receive the table index
-        while true; do
-            _logger_info "Which index would you like to update"
+        if [[ "${GAMER}" == "AI" ]]; then
 
-            read -rn 1 ans
+            _logger_info "${GAMER} is thinking"
 
-            _sleep
-            case "${ans}" in
-                [0-8])
-                    index="${ans}"
-                    break
-                    ;;
+            _check_for_ai "${value}"
 
-                [Hh])
-                    _game_instruction
-                    ;;
+            index="${?}"
+        else
+            # receive the table index
+            while true; do
+                _logger_info "Which index would you like to update"
 
-                [Rr])
-                    retries=$((retries - 1))
+                read -rn 1 ans
 
-                    _reset_table
+                _sleep
+                case "${ans}" in
+                    [0-8])
+                        index="${ans}"
+                        break
+                        ;;
 
-                    if [[ "$?" -eq 1 ]]; then
-                        _check_wrong_option "${retries}"
-                    else
-                        _logger_info "You have ${retries} reset available"
-                    fi
-                    ;;
+                    [Hh])
+                        _game_instruction
+                        ;;
 
-                [Ss] | [Cc])
-                    if [[ "${block_save}" -eq 1 ]]; then
-                        _logger_info "Game is already saved, maybe"
+                    [Rr])
+                        retries=$((retries - 1))
 
+                        _reset_table
+
+                        if [[ "$?" -eq 1 ]]; then
+                            _check_wrong_option "${retries}"
+                        else
+                            _logger_info "You have ${retries} reset available"
+                        fi
+                        ;;
+
+                    [Ss] | [Cc])
+                        if [[ "${block_save}" -eq 1 ]]; then
+                            _logger_info "Game is already saved, maybe"
+
+                            _check_wrong_option "${retries}"
+
+                            retries=$((retries - 1))
+
+                            continue
+                        fi
+
+                        _sleep
+
+                        _save_game "${save_file}"
+
+                        block_save=1
+                        ;;
+
+                    [Qq])
+                        good_bye
+
+                        # notice how we leave the func with return instead of exit
+                        return 0
+                        ;;
+
+                    *)
                         _check_wrong_option "${retries}"
 
                         retries=$((retries - 1))
-
-                        continue
-                    fi
-
-                    _sleep
-
-                    _save_game "${save_file}"
-
-                    block_save=1
-                    ;;
-
-                [Qq])
-                    good_bye
-
-                    # notice how we leave the func with return instead of exit
-                    return 0
-                    ;;
-
-                *)
-                    _check_wrong_option "${retries}"
-
-                    retries=$((retries - 1))
-                    ;;
-            esac
-        done
+                        ;;
+                esac
+            done
+        fi
 
         _sleep
 
@@ -139,8 +155,10 @@ function run_program() {
         else
             if [[ "${value}" == "O" ]]; then
                 value="X"
+                GAMER="AI"
             else
                 value="O"
+                GAMER="${USER}"
             fi
         fi
 
@@ -149,8 +167,6 @@ function run_program() {
             # lift save blocker
             block_save=0
         fi
-
-        _logger_info "${GAMER} will use - '${value}'"
     done
 }
 
@@ -171,16 +187,24 @@ function start_game() {
 
         value=`head -1 ${save_file} | cut -d '=' -f 2`
 
+        if [[ "${value}" == "O" ]]; then
+            value="X"
+            GAMER="AI"
+        else
+            value="O"
+            GAMER="${USER}"
+        fi
+
         # delete first line
         # sed -i '1d' ${save_file}
 
         for i in `tail -n +2 ${save_file}`; do
-            i=`echo ${i} | cut -d '=' -f 2`
+            k=`echo ${i} | cut -d '=' -f 2`
 
-            if [[ ! -z "${i}" ]]; then
+            if [[ ! -z "${k}" ]]; then
                 j=`echo ${i} | cut -d '=' -f 1`
 
-                table[${j}]="${i}"
+                table[${j}]="${k}"
             fi
         done
     fi
