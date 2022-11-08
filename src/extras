@@ -36,6 +36,11 @@ function _show_table() {
 function _help() {
     _logger_info "Usage: ${0} [-h]"
 
+    echo "
+R - Reset table
+S - Save table
+Q - Quit game
+"
     _game_instruction
 }
 
