@@ -11,15 +11,25 @@ function _sleep() {
 
 
 function _game_instruction() {
+    _logger_info "${GAMER} will use - '${value}'"
+
     echo "
-    How to play this game?
-
-    First select where to insert tic or tac.
-
     Table (reference) index:
     [0] [1] [2]
     [3] [4] [5]
     [6] [7] [8]
+"
+}
+
+function _show_table() {
+    _logger_info "Showing the current table status"
+
+    _sleep
+
+    echo "
+    [${table[0]}] [${table[1]}] [${table[2]}]
+    [${table[3]}] [${table[4]}] [${table[5]}]
+    [${table[6]}] [${table[7]}] [${table[8]}]
 "
 }
 
@@ -29,27 +39,483 @@ function _help() {
     _game_instruction
 }
 
+function _reset_table() {
+    _sleep
+
+    if [[ "${#table[@]}" -eq 0 ]]; then
+        return 1
+    fi
+
+    _logger_info "Resetting table"
+
+    for i in {0..8}; do
+        unset table[${i}]
+    done
+}
+
+function _check_win() {
+    val="${3}"
+
+    if [[ "${table[$1]}" == "${val}" && "${table[$2]}" == "${val}" ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+function _check_for_ai() {
+    value="${1}"
+
+    for i in 4 0 8 1 7 6 2 3 5; do
+        if [[ -n "${table[${i}]}" ]]; then
+            continue
+        fi
+
+        # attack mechanism
+        j=0
+        while [ "${j}" -le 8 ]; do
+
+            if [[ -n "${table[${j}]}" ]]; then
+                j=$((j+1))
+                continue
+            fi
+
+            case "${j}" in
+                0)
+                    _check_win "1" "2" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "8" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "3" "6" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                1)
+                    _check_win "0" "2" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "7" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                2)
+                    _check_win "0" "1" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "6" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "5" "8" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                3)
+                    _check_win "0" "6" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "5" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                4)
+                    _check_win "0" "8" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "1" "7" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "2" "6" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "3" "5" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                5)
+                    _check_win "2" "8" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "3" "4" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                6)
+                    _check_win "0" "3" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "2" "4" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "7" "8" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                7)
+                    _check_win "1" "4" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "6" "8" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                8)
+                    _check_win "0" "4" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "2" "5" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "6" "7" "${value}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+            esac
+
+            j=$((j+1))
+        done
+
+        # defense mechanism
+        j=0
+        cheat="O"
+        while [ "${j}" -le 8 ]; do
+
+            if [[ -n "${table[${j}]}" ]]; then
+                j=$((j+1))
+                continue
+            fi
+
+            case "${j}" in
+                0)
+                    _check_win "1" "2" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "8" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "3" "6" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                1)
+                    _check_win "0" "2" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "7" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                2)
+                    _check_win "0" "1" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "6" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "5" "8" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                3)
+                    _check_win "0" "6" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "4" "5" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                4)
+                    _check_win "0" "8" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "1" "7" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "2" "6" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "3" "5" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                5)
+                    _check_win "2" "8" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "3" "4" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                6)
+                    _check_win "0" "3" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "2" "4" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "7" "8" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                7)
+                    _check_win "1" "4" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "6" "8" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+
+                8)
+                    _check_win "0" "4" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "2" "5" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+
+                    _check_win "6" "7" "${cheat}"
+                    if [[ "${?}" -eq 0 ]]; then
+                        return "${j}"
+                    fi
+                    ;;
+            esac
+
+            j=$((j+1))
+        done
+
+      return "${i}"
+    done
+}
+
+function _check_win_move() {
+    value="${3}"
+
+    if [[ "${table[$1]}" == "${value}" && "${table[$2]}" == "${value}" ]]; then
+        _sleep
+        _show_table
+
+        _logger_info "Game has ended! Congratulations to ${GAMER}"
+
+        _sleep
+        _sleep
+
+        _reset_table
+    # elif [[ "${#table[@]}" -eq 8 ]]; then
+    #     _sleep
+    #     _show_table
+
+    #     _logger_info "Nobody has won"
+
+    #     _reset_table
+    fi
+}
+
 function _update_move() {
     _logger_info "Updating table"
 
     index="${1}"
     value="${2}"
 
-    # TODO: In case if index is already filled, reject update
+    if [[ -n "${table[${index}]}" ]]; then
+        _logger_info "This table index was previously filled. Skipping"
 
-    table[${index}]=`echo ${value} | tr "[:lower:]" "[:upper:]"`
+        return 1
+    fi
 
-    # TODO: Reset table if full
-    # TODO: Check if "this" was a winning move
+    # value=`echo ${value} | tr "[:lower:]" "[:upper:]"`
+    table[${index}]="${value}"
+
+
+    table_tracker=$((table_tracker+1))
+
+    # Check if "this" was a winning move
+    case "${index}" in
+        0)
+            _check_win_move "1" "2" "${value}"
+
+            _check_win_move "4" "8" "${value}"
+
+            _check_win_move "3" "6" "${value}"
+            ;;
+
+        1)
+            _check_win_move "0" "2" "${value}"
+
+            _check_win_move "4" "7" "${value}"
+            ;;
+
+        2)
+            _check_win_move "0" "1" "${value}"
+
+            _check_win_move "4" "6" "${value}"
+
+            _check_win_move "5" "8" "${value}"
+            ;;
+
+        3)
+            _check_win_move "0" "6" "${value}"
+
+            _check_win_move "4" "5" "${value}"
+            ;;
+
+        4)
+            _check_win_move "0" "8" "${value}"
+
+            _check_win_move "1" "7" "${value}"
+
+            _check_win_move "2" "6" "${value}"
+
+            _check_win_move "3" "5" "${value}"
+            ;;
+
+        5)
+            _check_win_move "2" "8" "${value}"
+
+            _check_win_move "3" "4" "${value}"
+            ;;
+
+        6)
+            _check_win_move "0" "3" "${value}"
+
+            _check_win_move "2" "4" "${value}"
+
+            _check_win_move "7" "8" "${value}"
+            ;;
+
+        7)
+            _check_win_move "1" "4" "${value}"
+
+            _check_win_move "6" "8" "${value}"
+            ;;
+
+        8)
+            _check_win_move "0" "4" "${value}"
+
+            _check_win_move "2" "5" "${value}"
+
+            _check_win_move "6" "7" "${value}"
+            ;;
+    esac
+
+
+    if [[ "${#table[@]}" -eq 9 ]]; then
+        _logger_info "Nobody has won"
+
+        _reset_table
+    fi
+
+    return 0
 }
 
 function _save_game() {
+
+    if [[ "${#table[@]}" -eq 0 ]]; then
+        _logger_info "Table is empty. Can't save"
+
+        return 1
+    fi
+
     _logger_info "Saving the game"
 
     save_file="${1}"
 
     # wipe previous data
     cat /dev/null > ${save_file}
+
+    echo "value=${value}" >> ${save_file}
 
     for i in {0..8}; do
         echo "${i}=${table[i]}" >> ${save_file}
@@ -58,6 +524,8 @@ function _save_game() {
 
 function _check_wrong_option() {
     retries="$1"
+
+    _sleep
 
     _logger_info "You have picked the wrong option"
 
