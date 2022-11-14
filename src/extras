@@ -53,6 +53,8 @@ function _reset_table() {
 
     _logger_info "Resetting table"
 
+    block_save=2
+
     for i in {0..8}; do
         unset table[${i}]
     done
@@ -537,15 +539,15 @@ function _check_wrong_option() {
     _sleep
 
     # the program does not save progress here
-    if [[ "${retries}" -eq 0 ]]; then
+    if [[ "${retries}" -eq 1 ]]; then
+        _logger_info "Use (H)elp, for instructions"
+
+    elif [[ "${retries}" -eq 0 ]]; then
         _logger_info "Gamer ${USER} you have been timeout"
         _sleep
         _logger_info "Program is exiting"
 
         exit 2
-
-    elif [[ "${retries}" -eq 1 ]]; then
-        _logger_info "Use (H)elp, for instructions"
     fi
 
     _logger_info "You have ${retries} mistake(s) available"
