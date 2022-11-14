@@ -48,8 +48,6 @@ function good_bye() {
 }
 
 function run_program() {
-    # TODO: Improve save workflow
-
     save_file="${1}"
 
     if [[ ! -z "${2}" ]]; then
@@ -110,7 +108,15 @@ function run_program() {
 
                     [Ss] | [Cc])
                         if [[ "${block_save}" -eq 1 ]]; then
-                            _logger_info "Game is already saved, maybe"
+                            _logger_info "Apologies, can't save right now"
+
+                            _check_wrong_option "${retries}"
+
+                            retries=$((retries - 1))
+
+                            continue
+                        elif [[ "${block_save}" -eq 2 ]]; then
+                            _logger_info "Table was just reset"
 
                             _check_wrong_option "${retries}"
 
